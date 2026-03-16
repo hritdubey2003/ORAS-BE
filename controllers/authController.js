@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import pool from "../db/db.js";
 import generateToken from "../utils/generateToken.js";
 import logger from "../helper/logger.js";
-import { findUserByEmail, findUserById, findUserByPhone } from "../models/userModel.js";
+import { findUserByEmail, findUserById, findUserByPhone, createUser } from "../models/userModel.js";
 const SALT_ROUNDS = 10;
 
 export const register = async (req, res, next) => {
@@ -25,9 +25,9 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await findUserByEmail(email.toLowerCase());
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser) {
       return res.status(409).json({
         success: false,
         message: "User with this email already exists",
@@ -38,7 +38,7 @@ export const register = async (req, res, next) => {
     if (phone) {
       const existingPhone = await findUserByPhone(phone);
 
-      if (existingPhone.rows.length > 0) {
+      if (existingPhone) {
         return res.status(409).json({
           success: false,
           message: "User with this phone already exists",
@@ -87,14 +87,14 @@ export const login = async (req, res, next) => {
 
     const result = await findUserByEmail(email.toLowerCase());
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
 
-    const user = result.rows[0];
+    const user = result;
 
     if (!user.is_active) {
       return res.status(403).json({
@@ -153,7 +153,7 @@ export const getUserProfile = async (req, res, next) => {
 
     const result = await findUserById(userId);  
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -163,7 +163,7 @@ export const getUserProfile = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "User profile fetched successfully",
-      data: result.rows[0],
+      data: result
     });
   } catch (error) {
     logger.error(error);
