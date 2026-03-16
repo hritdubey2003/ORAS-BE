@@ -1,20 +1,27 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
-
-dotenv.config();
-
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import authRoutes from "./route/authRoutes.js";
+import errorHandler from "./middlewares/errorHandler.js";
 const app = express();
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+app.use(morgan("dev"));
 
-app.get("/", (req, res) => {
-  res.send("Health Check!");
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "User Service is healthy"
+  });
 });
 
-const PORT = process.env.PORT || 3001;
+app.use("/api/users", authRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+app.use(errorHandler);
+
+export default app;
